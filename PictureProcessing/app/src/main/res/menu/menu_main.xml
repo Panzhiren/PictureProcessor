@@ -1,0 +1,29 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context="com.example.dell.pictureprocessing.MainActivity">
+    <item
+        android:id="@+id/action_hReverse"
+        android:orderInCategory="101"
+        android:title="@string/action_hReverse" />
+    <item
+        android:id="@+id/action_vReverse"
+        android:orderInCategory="102"
+        android:title="@string/action_vReverse" />
+    <item
+        android:id="@+id/action_relief"
+        android:orderInCategory="103"
+        android:title="@string/action_Relief" />
+    <item
+        android:id="@+id/action_sharpen"
+        android:orderInCategory="104"
+        android:title="@string/action_sharpen" />
+    <item
+        android:id="@+id/action_extract"
+        android:orderInCategory="105"
+        android:title="@string/action_extract" />
+    <item
+        android:id="@+id/action_save"
+        android:orderInCategory="106"
+        android:title="@string/action_save" />
+</menu>

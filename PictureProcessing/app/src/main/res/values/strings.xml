@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">图片处理器</string>
+    <string name="action_save">保存</string>
+    <string name="action_hReverse">水平反转</string>
+    <string name="action_vReverse">垂直反转</string>
+    <string name="action_Relief">浮雕</string>
+    <string name="action_sharpen">锐化</string>
+    <string name="action_extract">轮廓提取</string>
+    <string name="section_format">My Favorite: %1$d</string>
+</resources>
