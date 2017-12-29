@@ -1,13 +1,19 @@
 package com.example.dell.pictureprocessing;
 
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.PixelFormat;
+import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.util.Log;
+import android.util.Size;
+import android.widget.Toast;
 
+
+import java.io.File;
 
 
 /**
@@ -23,16 +29,8 @@ public class MyImageProcessor {
     }
 
 
-    private static Bitmap drawableToBitmap(Drawable drawable) {
-        Bitmap bitmap = Bitmap.createBitmap(
-                drawable.getIntrinsicWidth(),
-                drawable.getIntrinsicHeight(),
-                drawable.getOpacity() != PixelFormat.OPAQUE ? Bitmap.Config.ARGB_8888
-                        : Bitmap.Config.RGB_565);
-        Canvas canvas = new Canvas(bitmap);
-        drawable.setBounds(0, 0, drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight());
-        drawable.draw(canvas);
-        return bitmap;
+    public static Bitmap drawableToBitmap(Drawable drawable) {
+        return (((BitmapDrawable)drawable).getBitmap());
     }
 
 
@@ -133,17 +131,10 @@ public class MyImageProcessor {
         int height = bmp.getHeight();
         Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565);
 
-        int pixR = 0;
-        int pixG = 0;
-        int pixB = 0;
-
-        int pixColor = 0;
-
         int newR = 0;
         int newG = 0;
         int newB = 0;
 
-        int idx = 0;
         float alpha = 0.3F;
         int[] pixels = new int[width * height];
         bmp.getPixels(pixels, 0, width, 0, 0, width, height);
@@ -151,15 +142,15 @@ public class MyImageProcessor {
         {
             for (int k = 1, len = width - 1; k < len; k++)
             {
-                idx = 0;
+                int idx = 0;
                 for (int m = -1; m <= 1; m++)
                 {
                     for (int n = -1; n <= 1; n++)
                     {
-                        pixColor = pixels[(i + n) * width + k + m];
-                        pixR = Color.red(pixColor);
-                        pixG = Color.green(pixColor);
-                        pixB = Color.blue(pixColor);
+                        int pixColor = pixels[(i + n) * width + k + m];
+                        int pixR = Color.red(pixColor);
+                        int pixG = Color.green(pixColor);
+                        int pixB = Color.blue(pixColor);
 
                         newR = newR + (int) (pixR * laplacian[idx] * alpha);
                         newG = newG + (int) (pixG * laplacian[idx] * alpha);
@@ -186,36 +177,69 @@ public class MyImageProcessor {
     }
 
 
-    public static Bitmap extractPicture(Drawable picture){
+    public static Bitmap extractPicture(Drawable picture,int threshold){
         Bitmap curImageBitmap=drawableToBitmap(picture);
-        Bitmap reliefBitmap=extractBitmap(curImageBitmap);
+        Bitmap reliefBitmap=extractBitmap(curImageBitmap,threshold);
         return reliefBitmap;
     }
 
 
-    private static Bitmap extractBitmap(Bitmap image){
+    private static Bitmap extractBitmap(Bitmap image,int threshold){
+        long start = System.currentTimeMillis();
+
         int width=image.getWidth();
         int height=image.getHeight();
 
         Bitmap outImg =Bitmap.createBitmap(width,height,Bitmap.Config.ARGB_8888);
         outImg.eraseColor(Color.BLACK);//填充颜色
-        int x,y;
-        int rgb;
-        for( y=0;y<height;y++)  //按行扫描
+        // 拉普拉斯矩阵
+        int[] laplacian = new int[] { 0, 1, 0, 1, -4, 1, 0, 1,0 };
+        int newR = 0;
+        int newG = 0;
+        int newB = 0;
+        int[] pixels = new int[width * height];
+        image.getPixels(pixels, 0, width, 0, 0, width, height);
+        for (int i = 1, length = height - 1; i < length; i++)
         {
-            for( x=0;x<width;x++)
+            for (int k = 1, len = width - 1; k < len; k++)
             {
-                if( x==0 || x==width-1 ) continue;
-                if(y==0||y==height-1) break;
-                rgb = image.getPixel(x, y);
-                if( image.getPixel(x, y)!=-1 && (image.getPixel(x-1, y)==-1||image.getPixel(x+1, y)==-1) ){ //判断该点是不是轮廓点
-                    outImg.setPixel(x, y, rgb);
+                int idx = 0;
+                for (int m = -1; m <= 1; m++)
+                {
+                    for (int n = -1; n <= 1; n++)
+                    {
+                        int pixColor = pixels[(i + n) * width + k + m];
+                        int pixR = Color.red(pixColor);
+                        int pixG = Color.green(pixColor);
+                        int pixB = Color.blue(pixColor);
+
+                        newR +=pixR * laplacian[idx] ;
+                        newG +=pixG * laplacian[idx] ;
+                        newB +=pixB * laplacian[idx] ;
+                        idx++;
+                    }
                 }
+                if(newB>threshold&&newG>threshold&&newR>threshold)
+                    pixels[i * width + k]=Color.BLACK;
+                else
+                    pixels[i * width + k]=Color.WHITE;
+                newR = 0;
+                newG = 0;
+                newB = 0;
             }
         }
-
+        outImg.setPixels(pixels, 0, width, 0, 0, width, height);
+        long end = System.currentTimeMillis();
+        Log.d("may", "used time="+(end - start));
         return outImg;
     }
+
+
+
+
+
+
+
 
 
 

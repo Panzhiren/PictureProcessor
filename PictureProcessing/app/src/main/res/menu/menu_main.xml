@@ -24,6 +24,6 @@
         android:title="@string/action_extract" />
     <item
         android:id="@+id/action_save"
-        android:orderInCategory="106"
+        android:orderInCategory="107"
         android:title="@string/action_save" />
 </menu>

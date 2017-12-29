@@ -6,5 +6,7 @@
     <string name="action_Relief">浮雕</string>
     <string name="action_sharpen">锐化</string>
     <string name="action_extract">轮廓提取</string>
+    <string name="action_extract_rate">轮廓提取阈值</string>
+    <string name="action_extract_rate_tip">请输入在[0,1]范围内的小数</string>
     <string name="section_format">My Favorite: %1$d</string>
 </resources>

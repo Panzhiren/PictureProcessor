@@ -15,6 +15,8 @@ import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.provider.MediaStore;
 import android.support.design.widget.FloatingActionButton;
+import android.support.v4.content.ContextCompat;
+import android.support.v4.graphics.BitmapCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
@@ -30,32 +32,18 @@ import android.widget.ImageView;
 import android.widget.Toast;
 
 import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.HashMap;
 
 public class MainActivity extends AppCompatActivity {
 
-    /**
-     * The {@link android.support.v4.view.PagerAdapter} that will provide
-     * fragments for each of the sections. We use a
-     * {@link FragmentPagerAdapter} derivative, which will keep every
-     * loaded fragment in memory. If this becomes too memory intensive, it
-     * may be best to switch to a
-     * {@link android.support.v4.app.FragmentStatePagerAdapter}.
-     */
-    private SectionsPagerAdapter mSectionsPagerAdapter;
-
-    /**
-     * The {@link ViewPager} that will host the section contents.
-     */
-    private ViewPager mViewPager;
 
     //floating action
     private FloatingActionButton fab;
 
-    private SQLiteOp sqLiteOp;
+    private SQLiteDatabase writeDB;
+    private SQLiteDatabase readDB;
 
     private ImageView showImage;
 
@@ -64,12 +52,24 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        this.sqLiteOp=new SQLiteOp(this);
+        initDB();
         initToolbar();
         initShowImage();
 //        initViewPager();
         initFloatingActionBtn();
+    }
 
+
+    private void initDB(){
+        SQLiteOp sqLiteOp=new SQLiteOp(this);
+        writeDB=sqLiteOp.getWritableDatabase();
+        readDB=sqLiteOp.getReadableDatabase();
+        clearDB();
+    }
+
+    private void clearDB(){
+        String deleteCmm="delete from picture";
+        writeDB.execSQL(deleteCmm);
     }
 
     private void initToolbar(){
@@ -78,15 +78,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-//    private void initViewPager(){
-//        // Create the adapter that will return a fragment for each of the three
-//        // primary sections of the activity.
-//        mSectionsPagerAdapter = new SectionsPagerAdapter(getSupportFragmentManager());
-//
-//        // Set up the ViewPager with the sections adapter.
-//        mViewPager = (ViewPager) findViewById(R.id.container);
-//        mViewPager.setAdapter(mSectionsPagerAdapter);
-//    }
+
 
 
     private void initShowImage(){
@@ -145,16 +137,33 @@ public class MainActivity extends AppCompatActivity {
 
 
 
+
+
+    private void addPictrueIntoSQLite(ByteArrayOutputStream os){
+        ContentValues values=new ContentValues();
+        values.put("picture",os.toByteArray());
+        writeDB.insert("picture",null,values);
+        successTip();
+    }
+
+
+    private void successTip(){
+        new AlertDialog.Builder(this).setTitle("提示").setMessage("图片保存成功！")
+                .setPositiveButton("确定",null)
+                .show();
+    }
+
+
+    //获取资源文件中的图片
 //    public Drawable getPictrue(int position){
 //        String pictureName="saber"+String.valueOf(position);
 //        int picID=getPictureID(pictureName);
 //        if (picID!=0){
-//            Drawable showPicture=ContextCompat.getDrawable(this,picID);
+//            Drawable showPicture= ContextCompat.getDrawable(this,picID);
 //            return showPicture;
 //        }
 //        return null;
 //    }
-//
 //
 //
 //    public int getPictureID(String pictureName){
@@ -170,28 +179,10 @@ public class MainActivity extends AppCompatActivity {
 //
 //    }
 
-    private void addPictrueIntoSQLite(ByteArrayOutputStream os){
-        SQLiteDatabase db=this.sqLiteOp.getWritableDatabase();
-        ContentValues values=new ContentValues();
-        values.put("picture",os.toByteArray());
-        db.insert("picture",null,values);
-        db.close();
-        successTip();
-    }
-
-
-    private void successTip(){
-        new AlertDialog.Builder(this).setTitle("提示").setMessage("图片保存成功！")
-                .setPositiveButton("确定",null)
-                .show();
-    }
-
-
 
     private void getPictrueFromDB() {
-        SQLiteDatabase db = this.sqLiteOp.getReadableDatabase();
         String[] columns = {"id", "picture"};
-        Cursor cursor = db.query("picture", columns, null, null, null, null, null);
+        Cursor cursor = readDB.query("picture", columns, null, null, null, null, null);
         //判断游标是否为空
         if (cursor.moveToFirst())
         {
@@ -202,7 +193,6 @@ public class MainActivity extends AppCompatActivity {
             }while (cursor.moveToNext());
         }
         cursor.close();
-        db.close();
     }
 
 
@@ -290,11 +280,23 @@ public class MainActivity extends AppCompatActivity {
         showImage.setImageDrawable(sharpenPicture);
     }
 
+
     private void pictureExtract(){
-        Drawable curImageDrawable=showImage.getDrawable();
-        Bitmap extractBitmap=MyImageProcessor.extractPicture(curImageDrawable);
-        Drawable extractPicture=new BitmapDrawable(this.getResources(),extractBitmap);
-        showImage.setImageDrawable(extractPicture);
+        Intent intent=new Intent(this,ExtractPicture.class);
+        startActivity(intent);
     }
 
+//    private void pictureExtract(){
+//        Drawable curImageDrawable=showImage.getDrawable();
+//        Bitmap extractBitmap=MyImageProcessor.extractPicture(curImageDrawable,extractThreshold);
+//        Drawable extractPicture=new BitmapDrawable(this.getResources(),extractBitmap);
+//        showImage.setImageDrawable(extractPicture);
+//    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        writeDB.close();
+        readDB.close();
+    }
 }

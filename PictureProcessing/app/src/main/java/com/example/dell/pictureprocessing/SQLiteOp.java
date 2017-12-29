@@ -17,7 +17,7 @@ public class SQLiteOp extends SQLiteOpenHelper {
 
     @Override
     public void onCreate(SQLiteDatabase db) {
-        db.execSQL("CREATE TABLE picture(id INTEGER PRIMARY KEY AUTOINCREMENT, picture BLOB)");
+        db.execSQL("CREATE TABLE picture(id INTEGER PRIMARY KEY, picture BLOB)");
     }
 
     @Override
