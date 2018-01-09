@@ -2,75 +2,67 @@ package com.example.dell.pictureprocessing;
 
 import android.app.Activity;
 import android.content.ContentResolver;
-import android.content.ContentValues;
 import android.content.Intent;
-import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Canvas;
-import android.graphics.PixelFormat;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.provider.MediaStore;
 import android.support.design.widget.FloatingActionButton;
-import android.support.v4.content.ContextCompat;
-import android.support.v4.graphics.BitmapCompat;
-import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 
-import android.support.v4.app.FragmentPagerAdapter;
-import android.support.v4.view.ViewPager;
+
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 
 import android.widget.ImageView;
-import android.widget.Toast;
 
-import java.io.ByteArrayOutputStream;
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Stack;
 
 public class MainActivity extends AppCompatActivity {
 
-
-    //floating action
-    private FloatingActionButton fab;
 
     private SQLiteDatabase writeDB;
     private SQLiteDatabase readDB;
 
     private ImageView showImage;
 
+    private Stack<Drawable> pictureForRevoke;
+    private int maxRevokePictures;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        initDB();
+        initRevokeValue();
+//        initDB();
         initToolbar();
         initShowImage();
-//        initViewPager();
-        initFloatingActionBtn();
+        initAddPictureFabBtn();
+        initRevokeFabBtn();
+    }
+
+    private void initRevokeValue(){
+        pictureForRevoke=new Stack<>();
+        maxRevokePictures=10;
     }
 
 
-    private void initDB(){
-        SQLiteOp sqLiteOp=new SQLiteOp(this);
-        writeDB=sqLiteOp.getWritableDatabase();
-        readDB=sqLiteOp.getReadableDatabase();
-        clearDB();
-    }
-
-    private void clearDB(){
-        String deleteCmm="delete from picture";
-        writeDB.execSQL(deleteCmm);
-    }
+//    private void initDB(){
+//        SQLiteOp sqLiteOp=new SQLiteOp(this);
+//        writeDB=sqLiteOp.getWritableDatabase();
+//        readDB=sqLiteOp.getReadableDatabase();
+//        clearDB();
+//    }
+//
+//    private void clearDB(){
+//        String deleteCmm="delete from picture";
+//        writeDB.execSQL(deleteCmm);
+//    }
 
     private void initToolbar(){
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
@@ -99,26 +91,27 @@ public class MainActivity extends AppCompatActivity {
         // automatically handle clicks on the Home/Up button, so test1
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
-
+        if(id!=R.id.action_save)
+            putPictureIntoRevokeStack();
         //noinspection SimplifiableIfStatement
         switch (id){
             case R.id.action_save:
-                savePictureIntoDB();
+                savePicture();
                 break;
             case R.id.action_hReverse:
-                pictureReverse(0);
+                reversePicture(0);
                 break;
             case R.id.action_vReverse:
-                pictureReverse(1);
+                reversePicture(1);
                 break;
             case R.id.action_relief:
-                pictureRelief();
+                reliefPicture();
                 break;
             case R.id.action_sharpen:
-                pictureSharpen();
+                sharpenPicture();
                 break;
             case R.id.action_extract:
-                pictureExtract();
+                extractPicture();
                 break;
         }
 
@@ -126,32 +119,75 @@ public class MainActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
+    private void savePicture(){
+        MyImageProcessor.saveImageToGallery(this,MyImageProcessor.drawableToBitmap(showImage.getDrawable()));
+    }
 
-    private void savePictureIntoDB(){
-        Drawable picture=showImage.getDrawable();
-        Bitmap bmp = (((BitmapDrawable)picture).getBitmap());
-        ByteArrayOutputStream os = new ByteArrayOutputStream();
-        bmp.compress(Bitmap.CompressFormat.PNG, 100, os);
-        addPictrueIntoSQLite(os);
+    private void putPictureIntoRevokeStack(){
+        if(pictureForRevoke.size()>=maxRevokePictures){
+            pictureForRevoke.remove(0);
+        }
+        Drawable currentPicture=showImage.getDrawable();
+        pictureForRevoke.push(currentPicture);
     }
 
 
-
-
-
-    private void addPictrueIntoSQLite(ByteArrayOutputStream os){
-        ContentValues values=new ContentValues();
-        values.put("picture",os.toByteArray());
-        writeDB.insert("picture",null,values);
-        successTip();
+    private void reversePicture(int flag){
+        Drawable curImageDrawable=showImage.getDrawable();
+        Bitmap reversedBitmap=MyImageProcessor.reversePicture(curImageDrawable,flag);
+        Drawable reversePicture=new BitmapDrawable(this.getResources(),reversedBitmap);
+        showImage.setImageDrawable(reversePicture);
     }
 
 
-    private void successTip(){
-        new AlertDialog.Builder(this).setTitle("提示").setMessage("图片保存成功！")
-                .setPositiveButton("确定",null)
-                .show();
+    private void reliefPicture(){
+        Drawable curImageDrawable=showImage.getDrawable();
+        Bitmap reliefBitmap=MyImageProcessor.reliefPicture(curImageDrawable);
+        Drawable reliefPicture=new BitmapDrawable(this.getResources(),reliefBitmap);
+        showImage.setImageDrawable(reliefPicture);
     }
+
+
+    private void sharpenPicture(){
+        Drawable curImageDrawable=showImage.getDrawable();
+        Bitmap sharpenBitmap=MyImageProcessor.sharpenPicture(curImageDrawable);
+        Drawable sharpenPicture=new BitmapDrawable(this.getResources(),sharpenBitmap);
+        showImage.setImageDrawable(sharpenPicture);
+    }
+
+
+    private void extractPicture(){
+        MyImageProcessor.currentPicture=showImage.getDrawable();
+        Intent intent=new Intent(this,ExtractPicture.class);
+        startActivity(intent);
+    }
+
+
+//    private void savePictureIntoDB(){
+//        Drawable picture=showImage.getDrawable();
+//        Bitmap bmp = (((BitmapDrawable)picture).getBitmap());
+//        ByteArrayOutputStream os = new ByteArrayOutputStream();
+//        bmp.compress(Bitmap.CompressFormat.PNG, 100, os);
+//        addPictureIntoSQLite(os);
+//    }
+//
+//
+//
+//
+//
+//    private void addPictureIntoSQLite(ByteArrayOutputStream os){
+//        ContentValues values=new ContentValues();
+//        values.put("picture",os.toByteArray());
+//        writeDB.insert("picture",null,values);
+//        successTip();
+//    }
+//
+//
+//    private void successTip(){
+//        new AlertDialog.Builder(this).setTitle("提示").setMessage("图片保存成功！")
+//                .setPositiveButton("确定",null)
+//                .show();
+//    }
 
 
     //获取资源文件中的图片
@@ -180,33 +216,33 @@ public class MainActivity extends AppCompatActivity {
 //    }
 
 
-    private void getPictrueFromDB() {
-        String[] columns = {"id", "picture"};
-        Cursor cursor = readDB.query("picture", columns, null, null, null, null, null);
-        //判断游标是否为空
-        if (cursor.moveToFirst())
-        {
-            do{
-                int id = cursor.getInt(0);
-                byte[] blob = cursor.getBlob(1);
-                Drawable picture=exchangeByteToDrawble(blob);
-            }while (cursor.moveToNext());
-        }
-        cursor.close();
-    }
+//    private void getPictrueFromDB() {
+//        String[] columns = {"id", "picture"};
+//        Cursor cursor = readDB.query("picture", columns, null, null, null, null, null);
+//        //判断游标是否为空
+//        if (cursor.moveToFirst())
+//        {
+//            do{
+//                int id = cursor.getInt(0);
+//                byte[] blob = cursor.getBlob(1);
+//                Drawable picture=exchangeByteToDrawble(blob);
+//            }while (cursor.moveToNext());
+//        }
+//        cursor.close();
+//    }
+//
+//
+//    private Drawable exchangeByteToDrawble(byte[] blob){
+//        Bitmap bmp = BitmapFactory.decodeByteArray(blob, 0, blob.length);
+//        BitmapDrawable bd = new BitmapDrawable(this.getResources(),bmp);
+//        return bd;
+//    }
 
 
-    private Drawable exchangeByteToDrawble(byte[] blob){
-        Bitmap bmp = BitmapFactory.decodeByteArray(blob, 0, blob.length);
-        BitmapDrawable bd = new BitmapDrawable(this.getResources(),bmp);
-        return bd;
-    }
 
 
-
-
-    private void initFloatingActionBtn(){
-        fab = (FloatingActionButton) findViewById(R.id.fab);
+    private void initAddPictureFabBtn(){
+        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -214,8 +250,6 @@ public class MainActivity extends AppCompatActivity {
                 intent.setType("image/*");//设置类型
                 intent.addCategory(Intent.CATEGORY_OPENABLE);
                 startActivityForResult(intent,1);
-//                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-//                        .setAction("Action", null).show();
             }
         });
     }
@@ -257,41 +291,25 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    private void pictureReverse(int flag){
-        Drawable curImageDrawable=showImage.getDrawable();
-        Bitmap reversedBitmap=MyImageProcessor.reversePicture(curImageDrawable,flag);
-        Drawable reversePicture=new BitmapDrawable(this.getResources(),reversedBitmap);
-        showImage.setImageDrawable(reversePicture);
+    private void initRevokeFabBtn(){
+        FloatingActionButton revokeFab = (FloatingActionButton) findViewById(R.id.revoke_fab);
+        revokeFab.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                revokePicture();
+            }
+        });
+    }
+
+    private void revokePicture(){
+        if(!pictureForRevoke.empty()){
+            showImage.setImageDrawable(pictureForRevoke.peek());
+            pictureForRevoke.pop();
+        }
     }
 
 
-    private void pictureRelief(){
-        Drawable curImageDrawable=showImage.getDrawable();
-        Bitmap reliefBitmap=MyImageProcessor.reliefPicture(curImageDrawable);
-        Drawable reliefPicture=new BitmapDrawable(this.getResources(),reliefBitmap);
-        showImage.setImageDrawable(reliefPicture);
-    }
 
-
-    private void pictureSharpen(){
-        Drawable curImageDrawable=showImage.getDrawable();
-        Bitmap sharpenBitmap=MyImageProcessor.sharpenPicture(curImageDrawable);
-        Drawable sharpenPicture=new BitmapDrawable(this.getResources(),sharpenBitmap);
-        showImage.setImageDrawable(sharpenPicture);
-    }
-
-
-    private void pictureExtract(){
-        Intent intent=new Intent(this,ExtractPicture.class);
-        startActivity(intent);
-    }
-
-//    private void pictureExtract(){
-//        Drawable curImageDrawable=showImage.getDrawable();
-//        Bitmap extractBitmap=MyImageProcessor.extractPicture(curImageDrawable,extractThreshold);
-//        Drawable extractPicture=new BitmapDrawable(this.getResources(),extractBitmap);
-//        showImage.setImageDrawable(extractPicture);
-//    }
 
     @Override
     protected void onDestroy() {
