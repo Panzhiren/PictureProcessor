@@ -186,62 +186,57 @@ public class MyImageProcessor {
     }
 
 
-    public static Bitmap extractPicture(Drawable picture,int threshold){
-        Bitmap curImageBitmap=drawableToBitmap(picture);
-        Bitmap reliefBitmap=extractBitmap(curImageBitmap,threshold);
-        return reliefBitmap;
-    }
 
 
-    private static Bitmap extractBitmap(Bitmap image,int threshold){
-        long start = System.currentTimeMillis();
-
-        int width=image.getWidth();
-        int height=image.getHeight();
-
-        Bitmap outImg =Bitmap.createBitmap(width,height,Bitmap.Config.ARGB_8888);
-        outImg.eraseColor(Color.BLACK);//填充颜色
-        // 拉普拉斯矩阵
-        int[] laplacian = new int[] { 0, 1, 0, 1, -4, 1, 0, 1,0 };
-        int newR = 0;
-        int newG = 0;
-        int newB = 0;
-        int[] pixels = new int[width * height];
-        image.getPixels(pixels, 0, width, 0, 0, width, height);
-        for (int i = 1, length = height - 1; i < length; i++)
-        {
-            for (int k = 1, len = width - 1; k < len; k++)
-            {
-                int idx = 0;
-                for (int m = -1; m <= 1; m++)
-                {
-                    for (int n = -1; n <= 1; n++)
-                    {
-                        int pixColor = pixels[(i + n) * width + k + m];
-                        int pixR = Color.red(pixColor);
-                        int pixG = Color.green(pixColor);
-                        int pixB = Color.blue(pixColor);
-
-                        newR +=pixR * laplacian[idx] ;
-                        newG +=pixG * laplacian[idx] ;
-                        newB +=pixB * laplacian[idx] ;
-                        idx++;
-                    }
-                }
-                if(newB>threshold&&newG>threshold&&newR>threshold)
-                    pixels[i * width + k]=Color.BLACK;
-                else
-                    pixels[i * width + k]=Color.WHITE;
-                newR = 0;
-                newG = 0;
-                newB = 0;
-            }
-        }
-        outImg.setPixels(pixels, 0, width, 0, 0, width, height);
-        long end = System.currentTimeMillis();
-        Log.d("may", "used time="+(end - start));
-        return outImg;
-    }
+//    private static Bitmap extractBitmap(Bitmap image,int threshold){
+//        long start = System.currentTimeMillis();
+//
+//        int width=image.getWidth();
+//        int height=image.getHeight();
+//
+//        Bitmap outImg =Bitmap.createBitmap(width,height,Bitmap.Config.ARGB_8888);
+//        outImg.eraseColor(Color.BLACK);//填充颜色
+//        // 拉普拉斯矩阵
+//        int[] laplacian = new int[] { 0, 1, 0, 1, -4, 1, 0, 1,0 };
+//        int newR = 0;
+//        int newG = 0;
+//        int newB = 0;
+//        int[] pixels = new int[width * height];
+//        image.getPixels(pixels, 0, width, 0, 0, width, height);
+//        for (int i = 1, length = height - 1; i < length; i++)
+//        {
+//            for (int k = 1, len = width - 1; k < len; k++)
+//            {
+//                int idx = 0;
+//                for (int m = -1; m <= 1; m++)
+//                {
+//                    for (int n = -1; n <= 1; n++)
+//                    {
+//                        int pixColor = pixels[(i + n) * width + k + m];
+//                        int pixR = Color.red(pixColor);
+//                        int pixG = Color.green(pixColor);
+//                        int pixB = Color.blue(pixColor);
+//
+//                        newR +=pixR * laplacian[idx] ;
+//                        newG +=pixG * laplacian[idx] ;
+//                        newB +=pixB * laplacian[idx] ;
+//                        idx++;
+//                    }
+//                }
+//                if(newB>threshold&&newG>threshold&&newR>threshold)
+//                    pixels[i * width + k]=Color.BLACK;
+//                else
+//                    pixels[i * width + k]=Color.WHITE;
+//                newR = 0;
+//                newG = 0;
+//                newB = 0;
+//            }
+//        }
+//        outImg.setPixels(pixels, 0, width, 0, 0, width, height);
+//        long end = System.currentTimeMillis();
+//        Log.d("may", "used time="+(end - start));
+//        return outImg;
+//    }
 
 
 

@@ -80,6 +80,7 @@ public class ExtractPicture extends AppCompatActivity implements IMain {
         switch (id){
             case R.id.extract_action_save:
                 MyImageProcessor.saveImageToGallery(this,MyImageProcessor.drawableToBitmap(showImage.getDrawable()));
+                Toast.makeText(this,"保存成功！",Toast.LENGTH_SHORT).show();
                 break;
             case R.id.extract_action_choose:
                 choosePicture();

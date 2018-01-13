@@ -20,6 +20,7 @@ import android.view.MenuItem;
 import android.view.View;
 
 import android.widget.ImageView;
+import android.widget.Toast;
 
 import java.util.Stack;
 
@@ -97,6 +98,7 @@ public class MainActivity extends AppCompatActivity {
         switch (id){
             case R.id.action_save:
                 savePicture();
+                Toast.makeText(this,"保存成功！",Toast.LENGTH_SHORT).show();
                 break;
             case R.id.action_hReverse:
                 reversePicture(0);
